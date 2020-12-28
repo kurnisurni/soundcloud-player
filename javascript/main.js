@@ -48,8 +48,7 @@ SoundCloudAPI.getTrack = function(inputValue) {
     }).then(function(tracks) {
         console.log(tracks);
 
-        //MOVING this here (away from renderTrack) only makes sense once you put it there to build
-        //and then find that the innerHTML text only should get removed once 
+        //MOVING this here (away from renderTrack) to clear previous search results
         var searchResult = document.querySelector('.js-search-results');
         searchResult.innerHTML = "";
 
@@ -174,3 +173,11 @@ SoundCloudAPI.getWidget = function(embedElement) {
 //populate the track list from local storage
 var sidePlayer = document.querySelector('.col-left');
 sidePlayer.innerHTML = localStorage.getItem("key");
+
+//Clear the playlist of all songs
+UI.ClearPlaylist = document.querySelector(".btn-reset").addEventListener('click', function() {
+
+    localStorage.clear();
+    location.reload();
+
+});
