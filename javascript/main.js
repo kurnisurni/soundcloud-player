@@ -1,34 +1,66 @@
-/* search */
+/* search the music*/
+let UI = {};
 
+
+UI.handleEnterPress = function() {
+    document.querySelector(".js-search").addEventListener('keypress', function(e) {
+        if (e.which === 13) {
+            var inputValue = e.target.value;
+            // onValueRead( inputValue );
+            //console.log(inputValue);
+            SoundCloudAPI.getTrack(inputValue);
+
+        }
+    });
+}
+
+UI.handleSubmitClick = function() {
+    document.querySelector(".js-submit").addEventListener('click', function(e) {
+        var inputValue = document.querySelector(".js-search").value;
+        //onValueRead( inputValue );
+        //console.log(inputValue);
+        SoundCloudAPI.getTrack(inputValue);
+    });
+}
+
+UI.handleEnterPress();
+UI.handleSubmitClick();
 
 /* Query Soundcloud API (step 1)*/
 //make an object
-var SoundcloudAPI = {};
+var SoundCloudAPI = {};
 
 //encapsulate function
-SoundcloudAPI.init = function() {
+SoundCloudAPI.init = function() {
     SC.initialize({
         client_id: 'cd9be64eeb32d1741c17cb39e41d254d'
     });
 }
 
-SoundcloudAPI.init();
+SoundCloudAPI.init();
 
-SoundcloudAPI.getTrack = function(inputValue) {
+//Search - https://developers.soundcloud.com/docs/api/guide#search
+SoundCloudAPI.getTrack = function(inputValue) {
 
     // find all sounds
-    SC.get('/tracks', {
+    return SC.get('/tracks', {
         q: inputValue
     }).then(function(tracks) {
         console.log(tracks);
-        SoundcloudAPI.renderTracks(tracks);
+
+        //MOVING this here (away from renderTrack) only makes sense once you put it there to build
+        //and then find that the innerHTML text only should get removed once 
+        var searchResult = document.querySelector('.js-search-results');
+        searchResult.innerHTML = "";
+
+        SoundCloudAPI.renderTrack(tracks, searchResult);
     });
 }
 
-SoundcloudAPI.getTrack("Towa Tei");
+//SoundcloudAPI.getTrack("Towa Tei");
 
 /* Display the cards */
-SoundcloudAPI.renderTracks = function(tracks) {
+SoundCloudAPI.renderTrack = function(tracks, searchResult) {
 
     tracks.forEach(function(track) {
         //card
@@ -53,8 +85,13 @@ SoundcloudAPI.renderTracks = function(tracks) {
         header.classList.add('header');
         header.innerHTML = '<a href="' + track.permalink_url + '" target="_blank">' + track.title + '</a>';
 
+        content.appendChild(header);
+
+        searchResult.appendChild(content);
+
         //button
         var button = document.createElement('div');
+        button.setAttribute('data-id', track.id);
         button.classList.add('ui', 'bottom', 'attached', 'button', 'js-button');
 
         var icon = document.createElement('i');
@@ -63,46 +100,77 @@ SoundcloudAPI.renderTracks = function(tracks) {
         var buttonText = document.createElement('span');
         buttonText.innerHTML = 'Add to playlist';
 
-        //append child
-        content.appendChild(header);
-
         button.appendChild(icon);
         button.appendChild(buttonText);
 
         button.addEventListener('click', function() {
-            SoundcloudAPI.getEmbed(track.permalink_url); //connect this button to embed below, and pass on url permalink in the prop
-        })
+            SoundCloudAPI.getEmbed(track.uri); //connect this button to embed below, and pass on url permalink in the prop
+        });
 
+        //card
         card.appendChild(imageDiv);
         card.appendChild(content);
         card.appendChild(button);
 
-        var searchResults = document.querySelector(".js-search-results");
-        searchResults.appendChild(card);
+        //var searchResults = document.querySelector(".js-search-results");
+        searchResult.appendChild(card);
     });
 }
 
 //wrap the add playlist button to a function so it can connect to the embed music
-SoundcloudAPI.getEmbed = function(trackURL) {
-    console.log("Click in get embed");
+//embedding
+//https://developers.soundcloud.com/docs/api/sdks#embedding
+SoundCloudAPI.getEmbed = function(trackPermalink) {
+    // return SC.oEmbed( trackPermalink, {
+    // 	maxheight: 200,
+    // 	show_comments: false
+    // }).then(function(oEmbed){
+    // 	console.log(oEmbed)
+    // });
 
     /* Add to playlist and play */
-    SC.oEmbed(trackURL, {
+    SC.oEmbed(trackPermalink, {
         auto_play: true
-    }).then(function(embed) {
-        console.log('oEmbed response: ', embed);
+    }).then(function(oEmbed) {
+        console.log('oEmbed response: ', oEmbed);
 
-        var sidePlayer = document.querySelector('.js-playlist');
+        var sidePlayer = document.querySelector('.col-left');
+
+        // var playListArray = [];
+        // playListArray.push(oEmbed.html)
 
         var box = document.createElement('div');
-        box.innerHTML = embed.html;
+        box.innerHTML = oEmbed.html;
 
         sidePlayer.insertBefore(box, sidePlayer.firstChild);
 
-        //assign to local storage, so when load the browser the playlist is still there
+        //set local storage so we can call it after refresh 
         localStorage.setItem("key", sidePlayer.innerHTML);
+
+        // grab the widget object
+        var SCWidget = SoundCloudAPI.getWidget(embed.childNodes[0]);
+
+        // bind the finish event to init
+        SCWidget.bind('finish', function() {
+            alert("FINISHED");
+            // Playlist.next();
+
+            // var nextEmbed = sidebar.childNodes[ Playlist.currentTrack ];
+            // var nextWidget = SoundCloudAPI.getWidget( nextEmbed.childNodes[ 0 ] );
+
+            // nextWidget.play();
+        });
+        SCWidget.bind('play', function() {
+            var widgetIndex = Array.from(sidePlayer.childNodes).indexOf(embed);
+            Playlist.currentTrack = widgetIndex;
+        });
     });
 }
 
-var sidePlayer = document.querySelector('.js-playlist');
+SoundCloudAPI.getWidget = function(embedElement) {
+    return SC.Widget(embedElement);
+}
+
+//populate the track list from local storage
+var sidePlayer = document.querySelector('.col-left');
 sidePlayer.innerHTML = localStorage.getItem("key");
