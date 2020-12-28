@@ -93,6 +93,10 @@ SoundcloudAPI.getEmbed = function(trackURL) {
         console.log('oEmbed response: ', embed);
 
         var sidePlayer = document.querySelector('.js-playlist');
-        sidePlayer.innerHTML = embed.html;
+
+        var box = document.createElement('div');
+        box.innerHTML = embed.html;
+
+        sidePlayer.insertBefore(box, sidePlayer.firstChild);
     });
 }
