@@ -27,6 +27,7 @@ SoundcloudAPI.getTrack = function(inputValue) {
 
 SoundcloudAPI.getTrack("Towa Tei");
 
+/* Display the cards */
 SoundcloudAPI.renderTracks = function(tracks) {
 
     tracks.forEach(function(track) {
@@ -75,12 +76,16 @@ SoundcloudAPI.renderTracks = function(tracks) {
         var searchResults = document.querySelector(".js-search-results");
         searchResults.appendChild(card);
     });
-
-
 }
 
-SoundcloudAPI.renderTracks();
-/* Display the cards */
 
 
 /* Add to playlist and play */
+SC.oEmbed('https://soundcloud.com/forss/flickermood', {
+    auto_play: true
+}).then(function(embed) {
+    console.log('oEmbed response: ', embed);
+
+    var sidePlayer = document.querySelector('.js-playlist');
+    sidePlayer.innerHTML = embed.html;
+});
