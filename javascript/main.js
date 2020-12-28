@@ -98,5 +98,11 @@ SoundcloudAPI.getEmbed = function(trackURL) {
         box.innerHTML = embed.html;
 
         sidePlayer.insertBefore(box, sidePlayer.firstChild);
+
+        //assign to local storage, so when load the browser the playlist is still there
+        localStorage.setItem("key", sidePlayer.innerHTML);
     });
 }
+
+var sidePlayer = document.querySelector('.js-playlist');
+sidePlayer.innerHTML = localStorage.getItem("key");
